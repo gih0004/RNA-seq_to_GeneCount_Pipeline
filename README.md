@@ -379,6 +379,17 @@ The final matrix is written to:
 
 
 -------------------------------------------------------------
+
+## Citation
+
+If you use this RNA-seq pipeline in your research, please cite this repository:
+
+Guillian Hernández Casanova (2026).  
+**RNA-seq to Gene Count Matrix Pipeline**.  
+GitHub repository: https://github.com/gih0004/RNA-seq_to_GeneCount_Pipeline
+This pipeline generates gene expression count matrices from RNA-seq data using FastQC, fastp, HISAT2, SAMtools, and featureCounts for downstream differential expression analysis (e.g., DESeq2).
+
+---------------------------------------------------------------
 ### Expected Outputs
 After successful completion the pipeline generates:
 | File                          | Description                              |
