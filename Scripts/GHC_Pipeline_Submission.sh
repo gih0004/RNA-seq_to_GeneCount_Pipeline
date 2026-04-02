@@ -28,16 +28,60 @@ echo -e "\nAvailable feature types in $reference_gtf:"
 cut -f3 "$reference_gtf" | grep -v '^#' | sort | uniq -c | sort -nr | head -n 10
 
 # Prompt for feature type
-read -p "Enter feature type to count (e.g., exon, CDS, mRNA): " feature_type
+read -rp "Enter feature type to count (e.g., exon, CDS, mRNA, gene): " feature_type
 
-# Automatically determine gene attribute for featureCounts
-if [[ "$feature_type" == "gene" ]]; then
-    gene_attribute="ID"
-else
-    gene_attribute="Parent"
+# Extract attribute keys from 9th column (GFF/GTF)
+mapfile -t attributes < <(
+    cut -f9 "$reference_gtf" \
+    | tr ';' '\n' \
+    | cut -d'=' -f1 \
+    | cut -d' ' -f1 \
+    | sort -u
+)
+
+# Auto-detect default
+if [[ -z "$gene_attribute" ]]; then
+    if [[ "$feature_type" == "gene" ]]; then
+        default_attr="ID"
+    elif printf '%s\n' "${attributes[@]}" | grep -qx "Parent"; then
+        default_attr="Parent"
+    else
+        default_attr="ID"
+    fi
 fi
 
-echo "Gene attribute automatically selected for featureCounts (-g): $gene_attribute"
+echo "Detected attributes: ${attributes[*]}"
+echo "Suggested gene attribute: $default_attr"
+
+
+# Validate
+if ! printf '%s\n' "${attributes[@]}" | grep -qx "$gene_attribute"; then
+    echo "ERROR: '$gene_attribute' not found in annotation attributes."
+    exit 1
+fi
+
+echo "Using gene_attribute=$gene_attribute"
+
+\
+# Confirm
+echo -e "\nSubmitting pipeline with:"
+echo "Species        : $species"
+echo "Reference FASTA: $reference_fa"
+echo "Annotation GTF : $reference_gtf"
+echo "Feature Type   : $feature_type"
+echo "Gene Attribute : $gene_attribute"
+
+
+# Final confirmation
+read -p "Proceed with submission? [Y/n]: " confirm
+confirm=${confirm:-Y}
+
+if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    sbatch GHC_RNA_Pipeline.sh "$species" "$reference_fa" "$reference_gtf" "$feature_type" "$gene_attribute"
+else
+    echo "Submission cancelled."
+fi
+echo "Using gene_attribute=$gene_attribute"
 
 
 # Confirm
